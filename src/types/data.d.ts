@@ -18,7 +18,10 @@ declare interface Expense {
   amount: string,
   date: string,
   category: string,
-  iconId: string
+  iconId: string,
+  paymentMethod: string,
+  cardId: string,
+  cuotas: number
 };
 
 declare interface ExpenseCreationRequest {
@@ -26,7 +29,10 @@ declare interface ExpenseCreationRequest {
   amount: string,
   date: string,
   category: string,
-  iconId: string
+  iconId: string,
+  paymentMethod: string,
+  cardId: string,
+  cuotas: number
 };
 
 declare interface ExpenseEditingRequest {
@@ -34,7 +40,10 @@ declare interface ExpenseEditingRequest {
   amount: string,
   date: string,
   category: string,
-  iconId: string
+  iconId: string,
+  paymentMethod: string,
+  cardId: string,
+  cuotas: number
 };
 
 
@@ -65,6 +74,13 @@ declare interface BudgetCreationRequest {
   limitAmount: string,
   currentAmount: string,
   creationDate: string,
+  limitDate: string,
+  category: string,
+  iconId: string
+};
+declare interface BudgetEditionRequest {
+  name: string, 
+  limitAmount: string,
   limitDate: string,
   category: string,
   iconId: string
@@ -141,4 +157,25 @@ declare interface ApiError {
   status: HttpStatusCode,
   message: string,
   errors: string[]
+};
+
+
+
+//CARDS
+
+declare interface Card {
+  id: string,
+  userId: string,
+  cardName: string,
+  cardLimit: number
+};
+
+declare interface CardCreationRequest {
+  cardName: string,
+  cardLimit: number
+};
+
+declare interface CardEditingRequest {
+  cardName: string,
+  cardLimit: number
 };

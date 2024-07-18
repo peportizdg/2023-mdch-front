@@ -2,7 +2,6 @@ import React from 'react';
 import { Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { ListItem, Icon } from '@rneui/themed';
 import DatePicker from 'react-native-date-picker';
-
 import ScreenTemplate from '../components/ScreenTemplate';
 import { AppInput } from '../components/AppInput';
 import { useBudgetCreationForm } from '../hooks/budgets';

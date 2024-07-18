@@ -56,7 +56,7 @@ export function useUserCategories() {
   
     } else if(query.isError) {
       Alert.alert(
-        "Error",
+        "Error porque no existe el endpoint",
         query.error.message
       );
     }
@@ -83,7 +83,7 @@ export function useUserCategoriesWithIcons() {
   
     } else if(query.isError) {
       Alert.alert(
-        "Error",
+        "Error porque no existe el endpoint",
         query.error.message
       );
     }
