@@ -1,16 +1,10 @@
 import { QueryFunctionContext, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getFromApi, postToApi } from "../utils/fetching";
+import { getFromApi, postToApi, deleteFromApi } from "../utils/fetching"; // Assuming deleteFromApi is defined in fetching utils
 import { Alert } from "react-native";
 import SessionExpiredError from "../errors/SessionExpiredError";
 import { useAuthentication } from "./authentication";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect } from "react";
-
-
-
-
-
-
 
 // ***********************************
 //
@@ -21,17 +15,30 @@ import { useEffect } from "react";
 function getBudget({ queryKey }: QueryFunctionContext<[string, string]>): Promise<Budget> {
   const [, budgetId] = queryKey;
   return getFromApi(`/budget/${budgetId}`);
-};
+}
   
 function getBudgetList({ queryKey }: QueryFunctionContext<[string]>): Promise<Budget[]> {
   return getFromApi("/allBudgets");
-};
+}
 
 function submitBudget(request: BudgetCreationRequest): Promise<ApiResponse> {
   return postToApi("/addBudget", {
     credentials: "include",
     headers: {
       'Content-Type': "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+}
+
+function deleteBudget(budgetId: string): Promise<ApiResponse> {
+  return deleteFromApi(`/deleteBudget/${budgetId}`);
+}
+
+function submitEditedBudget({budgetId, request}: {budgetId: string, request: BudgetEditionRequest}): Promise<ApiResponse> {
+  return postToApi(`/editBudget/${budgetId}`, {
+    headers: {
+      "Content-Type": "application/json"
     },
     body: JSON.stringify(request)
   });
@@ -46,13 +53,7 @@ function getActiveBudgetByDateAndCategory({ queryKey }: QueryFunctionContext<[st
     },
     body: JSON.stringify({ date, category })
   });
-};
-
-
-
-
-
-
+}
 
 // ***********************************
 //
@@ -83,7 +84,6 @@ export function useBudget(budgetId: string) {
       );
     }
   }, [query.error]);
-
 
   return query;
 }
@@ -119,7 +119,6 @@ export function useBudgetCreationForm() {
   const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
   const queryClient = useQueryClient();
-
   const navigation = useNavigation();
   const { sessionExpired } = useAuthentication();
   const mutation = useMutation({
@@ -135,7 +134,6 @@ export function useBudgetCreationForm() {
     retry: false
   });
   
-
   useEffect(() => {
     if(mutation.error instanceof SessionExpiredError){
       Alert.alert(
@@ -172,6 +170,69 @@ export function useBudgetCreationForm() {
   return mutation;
 }
 
+export function useDeleteBudget() {
+  const queryClient = useQueryClient();
+  const { sessionExpired } = useAuthentication();
+
+  const mutation = useMutation({
+    mutationFn: deleteBudget,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['getBudgets'] });
+      queryClient.invalidateQueries({ queryKey: ['getActiveBudgets'] });
+    },
+    onError: (error) => {
+      if (error instanceof SessionExpiredError) {
+        Alert.alert(
+          "Session Expired",
+          error.message,
+          [{ text: "Return to Login", onPress: sessionExpired }]
+        );
+      } else {
+        console.error("Error deleting budget:", error);
+        Alert.alert(
+          "Error al eliminar",
+          error.message || "An error occurred while deleting the budget."
+        );
+      }
+    },
+    retry: false
+  });
+
+  return mutation;
+}
+
+
+export function useEditBudgetForm() {
+  const queryClient = useQueryClient();
+  const { sessionExpired } = useAuthentication();
+  const mutation = useMutation({
+    mutationFn: submitEditedBudget,
+    onSuccess: () => {
+      // Invalidate the budgets list and other related queries
+      queryClient.invalidateQueries({ queryKey: ['getBudgets'] });
+      queryClient.invalidateQueries({ queryKey: ['getActiveBudgets'] });
+    },
+    retry: false
+  });
+
+  useEffect(() => {
+    if (mutation.error instanceof SessionExpiredError) {
+      Alert.alert(
+        "Session Expired",
+        mutation.error.message,
+        [{ text: "Return to Login", onPress: sessionExpired }]
+      );
+    } else if (mutation.isError) {
+      Alert.alert(
+        "Error",
+        mutation.error.message
+      );
+    }
+  }, [mutation.error]);
+
+  return mutation;
+}
+
 export function useActiveBudgetByDateAndCategory(date: string, category: string) {
   const { sessionExpired } = useAuthentication();
   const query = useQuery({ 
@@ -200,4 +261,3 @@ export function useActiveBudgetByDateAndCategory(date: string, category: string)
 
   return query;
 }
-

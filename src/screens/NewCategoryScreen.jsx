@@ -49,7 +49,7 @@ const NewCategoryScreen = ({navigation, route}) => {
           color: '#333',
           marginBottom: 30,
           marginTop: 30,
-        }}>Create Expense</Text>
+        }}>Create new Category</Text>
         
         <Text>Name</Text>
         <AppInput.Category

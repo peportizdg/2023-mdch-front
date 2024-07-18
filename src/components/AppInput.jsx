@@ -314,4 +314,75 @@ const BudgetNameInput = props => {
 };
 AppInput.Budget = BudgetNameInput;
 
+const CardNameInput = (props) => {
+  return (
+    <Input 
+      value={props.value}
+      onChangeText={props.onChangeText}
+      placeholder={props.placeholder || 'Card Name'}
+      containerStyle={{
+        width: '100%',
+        paddingHorizontal: 0,
+      }}
+      inputContainerStyle={{
+        borderBottomColor: '#ccc',
+        borderBottomWidth: 1,
+        height: 35,
+      }}
+      inputStyle={{
+        fontSize: 15,
+      }}
+      leftIcon={
+        <MaterialIcons
+          name="credit-card"
+          size={20}
+          color="#666"
+          style={{marginRight: 5}}
+        />
+      }
+      placeholderTextColor={"#c4c4c4"}
+      errorMessage={props.errorMessage}
+      maxLength={50}
+      onEndEditing={props.onEndEditing}
+    />
+  );
+};
+AppInput.CardName = CardNameInput;
+
+const LimitInput = (props) => {
+  return (
+    <Input 
+      value={props.value}
+      onChangeText={props.onChangeText}
+      placeholder={props.placeholder || 'Limit'}
+      containerStyle={{
+        width: '100%',
+        paddingHorizontal: 0,
+      }}
+      inputContainerStyle={{
+        borderBottomColor: '#ccc',
+        borderBottomWidth: 1,
+        height: 35,
+      }}
+      inputStyle={{
+        fontSize: 15,
+      }}
+      leftIcon={
+        <MaterialIcons
+          name="attach-money"
+          size={20}
+          color="#666"
+          style={{marginRight: 5}}
+        />
+      }
+      placeholderTextColor={"#c4c4c4"}
+      errorMessage={props.errorMessage}
+      maxLength={12}
+      keyboardType="decimal-pad"
+      onEndEditing={props.onEndEditing}
+    />
+  );
+};
+AppInput.Limit = LimitInput;
+
 export {AppInput};

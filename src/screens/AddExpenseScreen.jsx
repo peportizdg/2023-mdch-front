@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { Text, StyleSheet, TouchableOpacity, Alert, View } from 'react-native';
 import { ListItem, Icon } from '@rneui/themed';
 import DatePicker from 'react-native-date-picker';
 
@@ -12,45 +12,47 @@ import { useExpenseCreationForm } from '../hooks/expenses';
 const iconFactory = (id) => {
   switch (id) {
     case 1:
-      return "aircraft"
+      return "aircraft";
     case 2:
-      return "drink"
+      return "drink";
     case 3:
-      return "key"
+      return "key";
     case 4:
-      return "shopping-cart"
+      return "shopping-cart";
     case 5:
-      return "clapperboard"
+      return "clapperboard";
     case 6:
-      return "squared-plus"
+      return "squared-plus";
     case 7:
-      return "man"
+      return "man";
     case 8:
-      return "open-book"
+      return "open-book";
     default:
-      return "credit"
+      return "credit";
   }
 };
 
-
-const AddExpenseScreen = ({navigation, route}) => {
+const AddExpenseScreen = ({ navigation, route }) => {
   const [concept, setConcept] = React.useState("");
   const [amount, setAmount] = React.useState("");
   const [date, setDate] = React.useState(new Date());
+  const [paymentMethod, setPaymentMethod] = React.useState("CASH"); // Default to CASH
 
   const [dateModalOpen, setDateModalOpen] = React.useState(false);
   const [conceptHasError, setConceptError] = React.useState(false);
   const [amountHasError, setAmountError] = React.useState(false);
-  
-  // if budget === null, that means there's no budget for selected date.
-  // if budget === undefined, that means it's still fetching from api.
-  const { isPending: isPendingActiveBudgets , data: activeBudget } = useActiveBudgetByDateAndCategory(date, route.params.selectedCategory.category);
-  const { isPending: isPendingForm , mutate: sendForm } = useExpenseCreationForm();
+
+  // Fetch cards list and handle card selection
+  // const [cards, setCards] = React.useState([]);
+  // const [selectedCard, setSelectedCard] = React.useState(null);
+
+  const { isPending: isPendingActiveBudgets, data: activeBudget } = useActiveBudgetByDateAndCategory(date, route.params.selectedCategory.category);
+  const { isPending: isPendingForm, mutate: sendForm } = useExpenseCreationForm();
 
   const loading = isPendingActiveBudgets || isPendingForm;
-  
+
   const handleSubmit = async () => {
-    if(checkForErrors()){
+    if (checkForErrors()) {
       Alert.alert("Validation error", "Please correct selected fields and try again.");
       return;
     }
@@ -59,7 +61,10 @@ const AddExpenseScreen = ({navigation, route}) => {
       amount,
       date: date.toISOString().substring(0, 10),
       category: route.params.selectedCategory.category,
-      iconId: route.params.selectedCategory.iconId
+      iconId: route.params.selectedCategory.iconId,
+      paymentMethod,
+      // cardId, // Uncomment when implemented
+      // cuotas, // Uncomment when implemented
     };
 
     sendForm(newExpense);
@@ -91,7 +96,7 @@ const AddExpenseScreen = ({navigation, route}) => {
 
   return (
     <ScreenTemplate loading={loading}>
-      <ScreenTemplate.Scrollable style={{paddingHorizontal: 15}}>
+      <ScreenTemplate.Scrollable style={{ paddingHorizontal: 15 }}>
         <Text style={{
           fontFamily: 'Roboto-Medium',
           fontSize: 28,
@@ -102,18 +107,18 @@ const AddExpenseScreen = ({navigation, route}) => {
         }}>Create Expense</Text>
 
         <Text>Category</Text>
-        <ListItem containerStyle={{marginBottom: 20}}>
+        <ListItem containerStyle={{ marginBottom: 20 }}>
           <Icon name={iconFactory(route.params.selectedCategory.iconId)} type="entypo" />
           <ListItem.Content>
             <ListItem.Title>{route.params.selectedCategory.category}</ListItem.Title>
           </ListItem.Content>
         </ListItem>
-        
+
         <Text>Name</Text>
         <AppInput.Concept
           value={concept}
           onChangeText={setConcept}
-          errorMessage={conceptHasError? "Concept may only contain letters or numbers" : null}
+          errorMessage={conceptHasError ? "Concept may only contain letters or numbers" : null}
           onEndEditing={checkConceptError}
         />
 
@@ -121,7 +126,7 @@ const AddExpenseScreen = ({navigation, route}) => {
         <AppInput.Amount
           value={amount}
           onChangeText={setAmount}
-          errorMessage={amountHasError? "Amount must be positive and limited to cent precision" : null}
+          errorMessage={amountHasError ? "Amount must be positive and limited to cent precision" : null}
           onEndEditing={checkAmountError}
         />
 
@@ -146,8 +151,27 @@ const AddExpenseScreen = ({navigation, route}) => {
           maximumDate={new Date()}
         />
 
-        {activeBudget? (
-          <BudgetFilledMeter 
+        {/* Payment Method selector */}
+        <Text>Payment Method</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            style={[styles.paymentMethodButton, paymentMethod === 'CASH' ? styles.activePaymentMethod : null]}
+            onPress={() => setPaymentMethod('CASH')}
+          >
+            <Text style={styles.paymentMethodButtonText}>CASH</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.paymentMethodButton, paymentMethod === 'CARD' ? styles.activePaymentMethod : null]}
+            onPress={() => setPaymentMethod('CARD')}
+          >
+            <Text style={styles.paymentMethodButtonText}>CARD</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Add Card Dropdown (to be implemented) */}
+
+        {activeBudget ? (
+          <BudgetFilledMeter
             name={activeBudget.name}
             startFilled={activeBudget.currentAmount}
             limit={activeBudget.limitAmount}
@@ -162,7 +186,7 @@ const AddExpenseScreen = ({navigation, route}) => {
         <TouchableOpacity style={styles.cancelButton} onPress={handleBack}>
           <Text style={styles.cancelButtonText}>Back</Text>
         </TouchableOpacity>
-        
+
       </ScreenTemplate.Scrollable>
 
     </ScreenTemplate>
@@ -194,6 +218,20 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  paymentMethodButton: {
+    backgroundColor: '#DDD',
+    borderRadius: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    marginRight: 10,
+  },
+  activePaymentMethod: {
+    backgroundColor: '#4CAF50', // Example active color
+  },
+  paymentMethodButtonText: {
+    fontWeight: 'bold',
+    color: '#333',
   },
 });
 
