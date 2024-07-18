@@ -1,30 +1,25 @@
 import React from "react";
-import { Text, TouchableOpacity, Alert } from "react-native";
+import { Text, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import ScreenTemplate from "../components/ScreenTemplate";
 import { ProgressChart } from "react-native-chart-kit";
-
 import { ScrollView } from "react-native";
-import { useDeleteCard } from "../hooks/cards";
-
+import { useDeleteCard, getCardLimitStatus } from "../hooks/cards";
 
 const CardInfoScreen = ({ navigation, route }) => {
   const { selectedCard } = route.params;
-  console.log(selectedCard);
   const { mutate: deleteCard } = useDeleteCard();
+  const { data: monthlyExpenses, isLoading, isError } = getCardLimitStatus(selectedCard.id);
 
   const handleEditCard = () => {
     navigation.navigate("card-edit", {
-      selectedCard
+      selectedCard,
     });
   };
 
   const handleDelete = () => {
-    const card = {
-      cardId: selectedCard.id,
-  };
     Alert.alert(
       "Confirm Deletion",
-      "Are you sure you want to delete this budget?",
+      "Are you sure you want to delete this card?",
       [
         {
           text: "Cancel",
@@ -38,8 +33,8 @@ const CardInfoScreen = ({ navigation, route }) => {
                 navigation.goBack();
               },
               onError: (error) => {
-                console.error("Error deleting budget:", error);
-              }
+                console.error("Error deleting card:", error);
+              },
             });
           },
           style: "destructive",
@@ -47,6 +42,20 @@ const CardInfoScreen = ({ navigation, route }) => {
       ]
     );
   };
+
+  if (isLoading) {
+    return <ActivityIndicator size="large" color="#E86DC3" />;
+  }
+
+  if (isError) {
+    return <Text>Error loading card limit status</Text>;
+  }
+  if(monthlyExpenses == null){
+    expenses = 0;
+  }
+  else{
+    expenses = monthlyExpenses;
+  }
 
   return (
     <ScreenTemplate>
@@ -64,23 +73,33 @@ const CardInfoScreen = ({ navigation, route }) => {
           >
             Card name: {selectedCard.cardName}
           </Text>
-            <Text
-                style={{
-                    fontFamily: "Roboto-Medium",
-                    fontSize: 20,
-                    fontWeight: "500",
-                    color: "#333",
-                    marginBottom: 10,
-                }}
-            >
-                Card Limit : {selectedCard.cardLimit}
-            </Text>
+          <Text
+            style={{
+              fontFamily: "Roboto-Medium",
+              fontSize: 20,
+              fontWeight: "500",
+              color: "#333",
+              marginBottom: 10,
+            }}
+          >
+            Card Limit: {selectedCard.cardLimit}
+          </Text>
+          <Text
+            style={{
+              fontFamily: "Roboto-Medium",
+              fontSize: 20,
+              fontWeight: "500",
+              color: "#333",
+              marginBottom: 10,
+            }}
+          >
+            Card Monthly expenses: {expenses}
+          </Text>
 
-            <ProgressChart
+          <ProgressChart
             data={{
               labels: ["Limit status"], // optional
-              data: [ 1/ selectedCard.cardLimit
-              ],
+              data: [ expenses / selectedCard.cardLimit],
             }}
             width={330}
             height={150}
@@ -92,7 +111,6 @@ const CardInfoScreen = ({ navigation, route }) => {
             }}
             hideLegend={true}
           />
-
 
           <TouchableOpacity
             style={{
@@ -124,7 +142,6 @@ const CardInfoScreen = ({ navigation, route }) => {
               marginTop: 10,
             }}
             onPress={handleEditCard}
-          
           >
             <Text
               style={{
@@ -164,3 +181,4 @@ const CardInfoScreen = ({ navigation, route }) => {
 };
 
 export default CardInfoScreen;
+
