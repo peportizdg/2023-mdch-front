@@ -24,7 +24,7 @@ const ProgrammedExpenseList = ({ onAdd, onSelection }) => {
       >
         <Icon name="add" type="ionicon" />
         <ListItem.Content>
-          <ListItem.Title>Create new Programmed Expense</ListItem.Title>
+          <ListItem.Title>Program new Expense</ListItem.Title>
         </ListItem.Content>
         <ListItem.Chevron />
       </ListItem>

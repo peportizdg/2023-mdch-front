@@ -12,6 +12,7 @@ import RegisterScreen from '../screens/RegisterScreen';
 import LoginScreen from '../screens/LoginScreen';
 import BudgetStack from '../navigation/BudgetStack';
 import ExpenseStack from '../navigation/ExpenseStack';
+import ProgrammedExpenseStack from '../navigation/ProgrammedExpenseStack';
 import CardStack from '../navigation/CardStack';
 import ProgrammedExpensesScreen from '../screens/ProgrammedExpensesScreen';
 import { useAuthentication } from '../hooks/authentication';
@@ -125,7 +126,7 @@ export const DrawerNavigation = (props) => {
           />
           <Drawer.Screen
             name="ProgrammedExpenses"
-            component={ProgrammedExpensesScreen}
+            component={ProgrammedExpenseStack}
             options={{
               title: "Programmed Expenses",
               drawerIcon: ({color}) => (
