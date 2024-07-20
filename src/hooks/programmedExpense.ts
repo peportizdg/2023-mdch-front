@@ -1,16 +1,10 @@
-import { QueryFunctionContext, Mutation, useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { getFromApi, postToApi, deleteFromApi } from "../utils/fetching";
+import { QueryFunctionContext, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getFromApi, postToApi, deleteFromApi } from "../utils/fetching"; // Assuming deleteFromApi is defined in fetching utils
 import { Alert } from "react-native";
 import SessionExpiredError from "../errors/SessionExpiredError";
 import { useAuthentication } from "./authentication";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect } from "react";
-
-
-
-
-
-
 
 // ***********************************
 //
@@ -18,43 +12,34 @@ import { useEffect } from "react";
 //
 // ***********************************
 
-
-async function getCardList({ queryKey }: QueryFunctionContext<[string]>): Promise<Card[]> {
-  return getFromApi("/allMyCards");
-};
-
-async function getLimitStatus({ queryKey }: QueryFunctionContext<[string, string]>): Promise<number> {
-  const [, cardId] = queryKey;
-  const result = await getFromApi(`/getMonthlyCardExpenses/${cardId}`);
-  return result ?? 0; // If the result is null, return 0 instead
+  
+function getProgrammedExpenseList({ queryKey }: QueryFunctionContext<[string]>): Promise<ProgrammedExpense[]> {
+  return getFromApi("/getMyProgrammedExpenses");
 }
 
-function submitCard(request: CardCreationRequest): Promise<ApiResponse> {
-  return postToApi("/addCard", {
+function submitProgrammedExpense(request: ProgrammedExpenseCreationRequest): Promise<ApiResponse> {
+  console.log(request);
+  return postToApi("/addProgrammedExpense", {
     credentials: "include",
     headers: {
       'Content-Type': "application/json"
     },
     body: JSON.stringify(request)
   });
-};
-
-function deleteCard(cardId: string): Promise<ApiResponse> {
-  return deleteFromApi(`/cards/${cardId}`);
 }
-function submitEditedCard({cardId, request}: {cardId: string, request: CardEditingRequest}): Promise<ApiResponse> {
-  return postToApi(`/editCard/${cardId}`, {
+
+function deleteProgrammedExpense(programmedExpenseId: string): Promise<ApiResponse> {
+  return deleteFromApi(`/deleteProgrammedExpense/${programmedExpenseId}`);
+}
+
+function submitEditedProgrammedExpense({programmedExpenseId, request}: {programmedExpenseId: string, request: ProgrammedExpenseEditionRequest}): Promise<ApiResponse> {
+  return postToApi(`/editProgrammedExpense/${programmedExpenseId}`, {
     headers: {
       "Content-Type": "application/json"
     },
     body: JSON.stringify(request)
   });
 };
-
-
-
-
-
 
 
 // ***********************************
@@ -64,12 +49,11 @@ function submitEditedCard({cardId, request}: {cardId: string, request: CardEditi
 // ***********************************
 
 
-
-export function useCardList() {
+export function useProgrammedExpenseList() {
   const { sessionExpired } = useAuthentication();
   const query = useQuery({ 
-    queryKey: ['getCards'], 
-    queryFn: getCardList,
+    queryKey: ['getProgrammedExpenses'], 
+    queryFn: getProgrammedExpenseList,
     retry: false
   });
 
@@ -92,22 +76,24 @@ export function useCardList() {
   return query;
 }
 
-export function useCardCreationForm() {
+export function useProgrammedExpenseCreationForm() {
   const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
   const queryClient = useQueryClient();
   const navigation = useNavigation();
   const { sessionExpired } = useAuthentication();
   const mutation = useMutation({
-    mutationFn: submitCard,
+    mutationFn: submitProgrammedExpense,
     onSuccess() {
-      // Invalidate cards lists
-      queryClient.invalidateQueries({ queryKey: ['getCards'] })
-
+      // Invalidate programmedExpense lists
+      queryClient.invalidateQueries({ queryKey: ['getProgrammedExpenses'] })
+      // Invalidate category lists
+      queryClient.invalidateQueries({ queryKey: ['getAllCategories'] })
+      queryClient.invalidateQueries({ queryKey: ['getAllCategoriesWithIcons'] })
     },
     retry: false
   });
-
+  
   useEffect(() => {
     if(mutation.error instanceof SessionExpiredError){
       Alert.alert(
@@ -128,12 +114,12 @@ export function useCardCreationForm() {
     if(mutation.isSuccess){
       Alert.alert(
         "Creation Success",
-        "Card created successfully",
+        "Programmed Expense created successfully",
         [{
           text: "OK", 
           onPress: async () => {
             await delay(100);
-            navigation.navigate("card-list" as never);
+            navigation.navigate("programmedExpense-list" as never);
             navigation.navigate("Table" as never);
           }
         }]
@@ -143,14 +129,16 @@ export function useCardCreationForm() {
 
   return mutation;
 }
-export function useDeleteCard() {
+
+export function useDeleteProgrammedExpense() {
   const queryClient = useQueryClient();
   const { sessionExpired } = useAuthentication();
 
   const mutation = useMutation({
-    mutationFn: deleteCard,
+    mutationFn: deleteProgrammedExpense,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['getAllMyCards'] });
+      queryClient.invalidateQueries({ queryKey: ['getProgrammedExpenses'] });
+      queryClient.invalidateQueries({ queryKey: ['getActiveProgrammedExpenses'] });
     },
     onError: (error) => {
       if (error instanceof SessionExpiredError) {
@@ -160,10 +148,10 @@ export function useDeleteCard() {
           [{ text: "Return to Login", onPress: sessionExpired }]
         );
       } else {
-        console.error("Error deleting card:", error);
+        console.error("Error deleting programmedExpense:", error);
         Alert.alert(
           "Error al eliminar",
-          error.message || "An error occurred while deleting the card."
+          error.message || "An error occurred while deleting the programmedExpense."
         );
       }
     },
@@ -172,13 +160,18 @@ export function useDeleteCard() {
 
   return mutation;
 }
-export function useEditCardForm() {
+
+
+export function useEditProgrammedExpenseForm() {
   const queryClient = useQueryClient();
   const { sessionExpired } = useAuthentication();
   const mutation = useMutation({
-    mutationFn: submitEditedCard,
+    mutationFn: submitEditedProgrammedExpense,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['getAllMyCards'] });    },
+      // Invalidate the programmedExpenses list and other related queries
+      queryClient.invalidateQueries({ queryKey: ['getProgrammedExpenses'] });
+      queryClient.invalidateQueries({ queryKey: ['getActiveProgrammedExpenses'] });
+    },
     retry: false
   });
 
@@ -199,28 +192,4 @@ export function useEditCardForm() {
 
   return mutation;
 }
-export function getCardLimitStatus(cardId : string) {
-  const { sessionExpired } = useAuthentication();
 
-  const query = useQuery({ 
-    queryKey: ['getLimitStatus', cardId], 
-    queryFn: getLimitStatus,
-    retry: false
-  });
-  useEffect(() => {
-    if (query.error instanceof SessionExpiredError) {
-      Alert.alert(
-        "Session Expired",
-        query.error.message,
-        [{ text: "Return to Login", onPress: sessionExpired }]
-      );
-    } else if (query.isError) {
-      Alert.alert(
-        "Error",
-        query.error.message
-      );
-    }
-  }, [query.error]);
-
-  return query;
-}

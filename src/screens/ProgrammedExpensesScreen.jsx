@@ -1,20 +1,19 @@
 import React from "react";
 import { Text } from "react-native";
-
 import ScreenTemplate from "../components/ScreenTemplate";
 import BackButton from "../components/BackButton";
-//import ProgrammedExpenseList from "../components/ProgrammedExpenseList";
+import ProgrammedExpenseList from "../components/ProgrammedExpenseList";
 
 const ProgrammedExpensesScreen = ({ navigation, route }) => {
 
   const handleProgrammedExpenseSelection = (expense) => {
-    navigation.navigate("programmed-expense-info", {
+    navigation.navigate("programmedExpense-info", {
       selectedProgrammedExpense: expense
     });
   };
 
   const handleAddProgrammedExpense = () => {
-    navigation.navigate("programmed-expense-add");
+    navigation.navigate("programmedExpense-add/categories-list");
   };
 
   return (

@@ -28,12 +28,12 @@ function submitExpense(request: ExpenseCreationRequest): Promise<ApiResponse> {
   });
 };
 
-function deleteExpense(budgetId: string): Promise<ApiResponse> {
-  return deleteFromApi(`/expenses/${budgetId}`);
+function deleteExpense(expenseId: string): Promise<ApiResponse> {
+  return deleteFromApi(`/expenses/${expenseId}`);
 };
 
-function submitEditedExpense({budgetId, request}: {budgetId: string, request: ExpenseEditingRequest}): Promise<ApiResponse> {
-  return postToApi(`/editExpense/${budgetId}`, {
+function submitEditedExpense({expenseId, request}: {expenseId: string, request: ExpenseEditingRequest}): Promise<ApiResponse> {
+  return postToApi(`/editExpense/${expenseId}`, {
     headers: {
       "Content-Type": "application/json"
     },
@@ -180,9 +180,9 @@ export function useDeleteExpense() {
   return mutation;
 }
 
-export function useEditExpenseForm() {
+export function useExpenseEditionForm() {
   const queryClient = useQueryClient();
-  
+
   const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
   const navigation = useNavigation();
@@ -190,7 +190,7 @@ export function useEditExpenseForm() {
   const mutation = useMutation({ 
     mutationFn: submitEditedExpense,
     onSuccess() {
-      // Invalidate budget lists
+      // Invalidate budgets lists
       queryClient.invalidateQueries({ queryKey: ['getBudgets'] })
       queryClient.invalidateQueries({ queryKey: ['getActiveBudgets'] })
       // Invalidate expense lists and reports
@@ -223,13 +223,13 @@ export function useEditExpenseForm() {
   useEffect(() => {
     if(mutation.isSuccess){
       Alert.alert(
-        "Expense Edit Success", 
-        "Your Expense was edited successfully", 
+        "Edition Successful",
+        "Expense edited successfully",
         [{
           text: "OK", 
           onPress: async () => {
             await delay(100);
-            navigation.navigate("expense-modify/categories-list" as never);
+            navigation.navigate("expense-add/categories-list" as never);
             navigation.navigate("Table" as never);
           }
         }]

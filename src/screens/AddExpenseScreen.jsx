@@ -1,13 +1,13 @@
 import React from 'react';
-import { Text, StyleSheet, TouchableOpacity, Alert, View } from 'react-native';
+import { Text, StyleSheet, TouchableOpacity, Alert, View, Animated } from 'react-native';
 import { ListItem, Icon } from '@rneui/themed';
 import DatePicker from 'react-native-date-picker';
-
 import ScreenTemplate from '../components/ScreenTemplate';
 import { AppInput } from '../components/AppInput';
 import BudgetFilledMeter from '../components/BudgetFilledMeter';
 import { useActiveBudgetByDateAndCategory } from '../hooks/budgets';
 import { useExpenseCreationForm } from '../hooks/expenses';
+import CardDropdown from '../components/CardDropdown';
 
 const iconFactory = (id) => {
   switch (id) {
@@ -37,14 +37,14 @@ const AddExpenseScreen = ({ navigation, route }) => {
   const [amount, setAmount] = React.useState("");
   const [date, setDate] = React.useState(new Date());
   const [paymentMethod, setPaymentMethod] = React.useState("CASH"); // Default to CASH
+  const [selectedCard, setSelectedCard] = React.useState("");
+  const [cuotas, setCuotas] = React.useState("");
 
   const [dateModalOpen, setDateModalOpen] = React.useState(false);
   const [conceptHasError, setConceptError] = React.useState(false);
   const [amountHasError, setAmountError] = React.useState(false);
 
-  // Fetch cards list and handle card selection
-  // const [cards, setCards] = React.useState([]);
-  // const [selectedCard, setSelectedCard] = React.useState(null);
+
 
   const { isPending: isPendingActiveBudgets, data: activeBudget } = useActiveBudgetByDateAndCategory(date, route.params.selectedCategory.category);
   const { isPending: isPendingForm, mutate: sendForm } = useExpenseCreationForm();
@@ -63,8 +63,8 @@ const AddExpenseScreen = ({ navigation, route }) => {
       category: route.params.selectedCategory.category,
       iconId: route.params.selectedCategory.iconId,
       paymentMethod,
-      // cardId, // Uncomment when implemented
-      // cuotas, // Uncomment when implemented
+      cardId: selectedCard,
+      cuotas,
     };
 
     sendForm(newExpense);
@@ -94,17 +94,36 @@ const AddExpenseScreen = ({ navigation, route }) => {
     return !isValid;
   };
 
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+  Animated.timing(fadeAnim, {
+    toValue: paymentMethod === 'CARD' ? 1 : 0,
+    duration: 300,
+    useNativeDriver: true,
+  }).start();
+}, [paymentMethod]);
+
+  React.useEffect(() => {
+    if (paymentMethod === 'CARD') {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [paymentMethod]);
+
   return (
     <ScreenTemplate loading={loading}>
       <ScreenTemplate.Scrollable style={{ paddingHorizontal: 15 }}>
-        <Text style={{
-          fontFamily: 'Roboto-Medium',
-          fontSize: 28,
-          fontWeight: '500',
-          color: '#333',
-          marginBottom: 30,
-          marginTop: 30,
-        }}>Create Expense</Text>
+        <Text style={styles.header}>Create Expense</Text>
 
         <Text>Category</Text>
         <ListItem containerStyle={{ marginBottom: 20 }}>
@@ -155,20 +174,35 @@ const AddExpenseScreen = ({ navigation, route }) => {
         <Text>Payment Method</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity
-            style={[styles.paymentMethodButton, paymentMethod === 'CASH' ? styles.activePaymentMethod : null]}
+            style={[styles.paymentMethodButton, paymentMethod === 'CASH' ? styles.activeCashPaymentMethod : null]}
             onPress={() => setPaymentMethod('CASH')}
           >
             <Text style={styles.paymentMethodButtonText}>CASH</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.paymentMethodButton, paymentMethod === 'CARD' ? styles.activePaymentMethod : null]}
+            style={[styles.paymentMethodButton, paymentMethod === 'CARD' ? styles.activeCardPaymentMethod : null]}
             onPress={() => setPaymentMethod('CARD')}
           >
             <Text style={styles.paymentMethodButtonText}>CARD</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Add Card Dropdown (to be implemented) */}
+        {/* Card and Cuotas fields */}
+        <Animated.View style={{ opacity: fadeAnim }}>
+          {paymentMethod === 'CARD' && (
+            <View>
+           <CardDropdown selectedCard={selectedCard} setSelectedCard={setSelectedCard} />
+
+          <Text style={styles.cuotasLabel}>Cuotas</Text>
+              <AppInput.Cuotas
+                value={cuotas}
+                onChangeText={setCuotas}
+                keyboardType="numeric"
+                errorMessage={cuotas && (parseInt(cuotas) < 1 || parseInt(cuotas) > 120) ? "Cuotas must be between 1 and 120" : null}
+              />
+            </View>
+          )}
+        </Animated.View>
 
         {activeBudget ? (
           <BudgetFilledMeter
@@ -194,6 +228,14 @@ const AddExpenseScreen = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
+  header: {
+    fontFamily: 'Roboto-Medium',
+    fontSize: 28,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 30,
+    marginTop: 18,
+  },
   saveButton: {
     backgroundColor: '#E86DC3',
     borderRadius: 5,
@@ -225,14 +267,24 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 15,
     marginRight: 10,
+    marginBottom: 10,
   },
-  activePaymentMethod: {
-    backgroundColor: '#4CAF50', // Example active color
+  activeCashPaymentMethod: {
+    backgroundColor: 'lightgreen',
+  },
+  activeCardPaymentMethod: {
+    backgroundColor: 'lightblue',
   },
   paymentMethodButtonText: {
     fontWeight: 'bold',
     color: '#333',
   },
+  cuotasLabel: {
+    fontSize: 14,
+    color: 'black',
+    marginBottom: 5,
+  },
 });
 
 export default AddExpenseScreen;
+

@@ -199,6 +199,42 @@ const AmountInput = (props) => {
 };
 AppInput.Amount = AmountInput;
 
+const CuotasInput = (props) => {
+  return(
+    <Input 
+      value={props.value}
+      onChangeText={props.onChangeText}
+      placeholder={props.placeholder || 'Cuotas'}
+      containerStyle={{
+        width: '100%',
+        paddingHorizontal: 0,
+      }}
+      inputContainerStyle={{
+        borderBottomColor: '#ccc',
+        borderBottomWidth: 1,
+        height: 35,
+      }}
+      inputStyle={{
+        fontSize: 15,
+      }}
+      leftIcon={
+        <MaterialIcons
+          name="credit-score"
+          size={20}
+          color="#666"
+          style={{marginRight: 5}}
+        />
+      }
+      placeholderTextColor={"#c4c4c4"}
+      errorMessage={props.errorMessage}
+      maxLength={12}
+      onEndEditing={props.onEndEditing}
+      keyboardType="decimal-pad"
+    />
+  );
+};
+AppInput.Cuotas = CuotasInput;
+
 const DateInput = props => {
   return(
     <Input 
@@ -385,4 +421,41 @@ const LimitInput = (props) => {
 };
 AppInput.Limit = LimitInput;
 
-export {AppInput};
+
+const PeriodicityInput = (props) => {
+  return(
+    <Input 
+      value={props.value}
+      onChangeText={props.onChangeText}
+      placeholder={props.placeholder || 'Periodicity'}
+      containerStyle={{
+        width: '100%',
+        paddingHorizontal: 0,
+      }}
+      inputContainerStyle={{
+        borderBottomColor: '#ccc',
+        borderBottomWidth: 1,
+        height: 35,
+      }}
+      inputStyle={{
+        fontSize: 15,
+      }}
+      leftIcon={
+        <MaterialIcons
+          name="today"
+          size={20}
+          color="#666"
+          style={{marginRight: 5}}
+        />
+      }
+      placeholderTextColor={"#c4c4c4"}
+      errorMessage={props.errorMessage}
+      maxLength={12}
+      onEndEditing={props.onEndEditing}
+      keyboardType="decimal-pad"
+    />
+  );
+};
+AppInput.Periodicity = PeriodicityInput;
+
+export { AppInput };

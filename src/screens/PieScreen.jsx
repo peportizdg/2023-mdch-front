@@ -31,10 +31,10 @@ const PieScreen = ({navigation, route}) => {
   const chartConfig = {
     color: () => `rgb(${Math.floor(Math.random() * 255)}, 255, 146)`,
   };
-
+  
   const renderItem = ({ item }) => (
     <ListItem  key={item.index} bottomDivider>
-      <Avatar rounded containerStyle={{ backgroundColor: item.color }}/>
+      <Avatar rounded containerStyle={{ backgroundColor: item.color || 'defaultColor' }}/>
       <ListItem.Content >
         <ListItem.Title numberOfLines={1} style={{ fontSize: 18 }}>{item.category}</ListItem.Title>
       </ListItem.Content>
