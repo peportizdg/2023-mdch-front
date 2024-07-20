@@ -21,6 +21,7 @@ const FilterModal = props => {
   const { isPending: loading, data: userCategories } = useUserCategories();
 
   const handleSubmit = () => {
+    console.log('Filtro: ' + from + ' ' + until + ' ' + categories);
     let data = {
       from,
       until,

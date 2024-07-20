@@ -3,6 +3,8 @@ import React from 'react';
 import ProgrammedExpensesScreen from '../screens/ProgrammedExpensesScreen';
 import AddProgrammedExpenseScreen from '../screens/AddProgrammedExpenseScreen';
 import ProgrammedExpenseInfoScreen from '../screens/ProgrammedExpenseInfoScreen';
+import CategorySelectionScreen from '../screens/CategorySelectionScreen';
+import NewCategoryScreen from '../screens/NewCategoryScreen';
 import EditProgrammedExpenseScreen from '../screens/EditProgrammedExpenseScreen'; 
 
 const Stack = createStackNavigator();
@@ -38,7 +40,36 @@ const ProgrammedExpenseStack = (props) => {
           headerShown: false
         }}
       />
+        <Stack.Screen 
+        name="edit-programmedExpense-screen/category-list"
+        component={CategorySelectionScreen}
+        options={{
+          headerShown: false
+        }}
+      />
+      <Stack.Screen
+        name="edit-programmedExpense-screen/category-add"
+        component={NewCategoryScreen}
+        options={{
+          headerShown: false
+        }}
+      />
+        <Stack.Screen 
+        name="programmedExpense-add/categories-list"
+        component={CategorySelectionScreen}
+        options={{
+          headerShown: false
+        }}
+      />
+      <Stack.Screen 
+        name="programmedExpense-add/categories-add"
+        component={NewCategoryScreen}
+        options={{
+          headerShown: false
+        }}
+      />
     </Stack.Navigator>
+    
   );
 };
 

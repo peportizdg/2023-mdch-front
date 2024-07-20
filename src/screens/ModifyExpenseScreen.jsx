@@ -1,12 +1,12 @@
 import React from 'react';
-import { Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { Text, StyleSheet, TouchableOpacity, Alert, View, Animated } from 'react-native';
 import { ListItem, Icon } from '@rneui/themed';
 import DatePicker from 'react-native-date-picker';
-
+import CardDropdown from '../components/CardDropdown';
 import ScreenTemplate from '../components/ScreenTemplate';
 import { AppInput } from '../components/AppInput';
 import BudgetFilledMeter from '../components/BudgetFilledMeter';
-import { useEditExpenseForm } from '../hooks/expenses';
+import { useExpenseEditionForm } from '../hooks/expenses';
 import { useActiveBudgetByDateAndCategory } from '../hooks/budgets';
 
 const iconFactory = (id) => {
@@ -37,13 +37,16 @@ const ModifyExpenseScreen = ({navigation, route}) => {
   const [concept, setConcept] = React.useState(route.params?.selectedItem?.concept || "");
   const [amount, setAmount] = React.useState(route.params?.selectedItem?.amount?.toString() || "");
   const [date, setDate] = React.useState(new Date(route.params?.selectedItem?.date) || new Date());
+  const [paymentMethod, setPaymentMethod] = React.useState(route.params?.selectedItem?.paymentMethod || "CASH"); 
+  const [selectedCard, setSelectedCard] = React.useState(route.params?.selectedItem?.cardId || "");
+  const [cuotas, setCuotas] = React.useState(route.params?.selectedItem?.cuotas || "");
 
   const [dateModalOpen, setDateModalOpen] = React.useState(false);
   const [conceptHasError, setConceptError] = React.useState(false);
   const [amountHasError, setAmountError] = React.useState(false);
   
   const { isPending: isPendingActiveBudgets, data: activeBudget } = useActiveBudgetByDateAndCategory(date, route.params.selectedCategory.category);
-  const { isPending: isPendingForm, mutate: sendForm } = useEditExpenseForm();
+  const { isPending: isPendingForm, mutate: sendForm } = useExpenseEditionForm();
   const loading = isPendingActiveBudgets || isPendingForm;
 
   const handleSubmit = async () => {
@@ -51,16 +54,24 @@ const ModifyExpenseScreen = ({navigation, route}) => {
       Alert.alert("Validation error", "Please correct selected fields and try again.");
       return;
     }
-    let newExpense = {
-      id: route.params.selectedItem.id,
-      concept,
-      amount,
-      date: date.toISOString().substring(0, 10),
-      category: route.params.selectedCategory.category,
-      iconId: route.params.selectedCategory.iconId
+    let editedExpense = {
+      expenseId: route.params.selectedItem.id,
+      request: {
+        concept,
+        amount,
+        date: date.toISOString().substring(0, 10),
+        category: route.params.selectedCategory.category,
+        iconId: route.params.selectedCategory.iconId,
+        paymentMethod,
+        cardId: selectedCard,
+        cuotas,
+      }
     };
 
-    sendForm(newExpense);
+  
+    console.log('Edited Expense:', editedExpense);
+  
+    sendForm(editedExpense);
   };
 
   const handleBack = async () => {
@@ -86,6 +97,32 @@ const ModifyExpenseScreen = ({navigation, route}) => {
     setAmountError(!isValid);
     return !isValid;
   };
+
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+
+    React.useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: paymentMethod === 'CARD' ? 1 : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [paymentMethod]);
+
+  React.useEffect(() => {
+    if (paymentMethod === 'CARD') {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [paymentMethod]);
 
   return (
     <ScreenTemplate loading={loading}>
@@ -143,6 +180,37 @@ const ModifyExpenseScreen = ({navigation, route}) => {
           }}
           maximumDate={new Date()}
         />
+        <Text>Payment Method</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            style={[styles.paymentMethodButton, paymentMethod === 'CASH' ? styles.activeCashPaymentMethod : null]}
+            onPress={() => setPaymentMethod('CASH')}
+          >
+            <Text style={styles.paymentMethodButtonText}>CASH</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.paymentMethodButton, paymentMethod === 'CARD' ? styles.activeCardPaymentMethod : null]}
+            onPress={() => setPaymentMethod('CARD')}
+          >
+            <Text style={styles.paymentMethodButtonText}>CARD</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Animated.View style={{ opacity: fadeAnim }}>
+          {paymentMethod === 'CARD' && (
+            <View>
+           <CardDropdown selectedCard={selectedCard} setSelectedCard={setSelectedCard} />
+
+          <Text style={styles.cuotasLabel}>Cuotas</Text>
+              <AppInput.Cuotas
+                value={cuotas}
+                onChangeText={setCuotas}
+                keyboardType="numeric"
+                errorMessage={cuotas && (parseInt(cuotas) < 1 || parseInt(cuotas) > 120) ? "Cuotas must be between 1 and 120" : null}
+              />
+            </View>
+          )}
+        </Animated.View>
 
         {activeBudget? (
           <BudgetFilledMeter 
@@ -154,7 +222,7 @@ const ModifyExpenseScreen = ({navigation, route}) => {
         ) : null}
 
         <TouchableOpacity style={styles.saveButton} onPress={handleSubmit}>
-          <Text style={styles.saveButtonText}>Create</Text>
+          <Text style={styles.saveButtonText}>Modify</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.cancelButton} onPress={handleBack}>
@@ -168,6 +236,14 @@ const ModifyExpenseScreen = ({navigation, route}) => {
 };
 
 const styles = StyleSheet.create({
+  header: {
+    fontFamily: 'Roboto-Medium',
+    fontSize: 28,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 30,
+    marginTop: 18,
+  },
   saveButton: {
     backgroundColor: '#E86DC3',
     borderRadius: 5,
@@ -192,6 +268,29 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  paymentMethodButton: {
+    backgroundColor: '#DDD',
+    borderRadius: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    marginRight: 10,
+    marginBottom: 10,
+  },
+  activeCashPaymentMethod: {
+    backgroundColor: 'lightgreen',
+  },
+  activeCardPaymentMethod: {
+    backgroundColor: 'lightblue',
+  },
+  paymentMethodButtonText: {
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  cuotasLabel: {
+    fontSize: 14,
+    color: 'black',
+    marginBottom: 5,
   },
 });
 

@@ -19,7 +19,7 @@ import { useEffect } from "react";
 // ***********************************
 
 
-function getCardList({ queryKey }: QueryFunctionContext<[string]>): Promise<Card[]> {
+async function getCardList({ queryKey }: QueryFunctionContext<[string]>): Promise<Card[]> {
   return getFromApi("/allMyCards");
 };
 

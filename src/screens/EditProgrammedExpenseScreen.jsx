@@ -1,76 +1,181 @@
-// EditProgrammedExpenseScreen.jsx
-
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
-import { useEditProgrammedExpenseForm } from '../hooks/programmedExpense';
+import React from 'react';
+import { Text, StyleSheet, TouchableOpacity, Alert, View, Animated } from 'react-native';
+import { ListItem, Icon } from '@rneui/themed';
+import DatePicker from 'react-native-date-picker';
+import CardDropdown from '../components/CardDropdown';
 import ScreenTemplate from '../components/ScreenTemplate';
 import { AppInput } from '../components/AppInput';
-import DatePicker from 'react-native-date-picker';
+import { useEditProgrammedExpenseForm } from '../hooks/programmedExpense';
 
+const iconFactory = (id) => {
+  switch (id) {
+    case 1:
+      return "aircraft"
+    case 2:
+      return "drink"
+    case 3:
+      return "key"
+    case 4:
+      return "shopping-cart"
+    case 5:
+      return "clapperboard"
+    case 6:
+      return "squared-plus"
+    case 7:
+      return "man"
+    case 8:
+      return "open-book"
+    default:
+      return "credit"
+  }
+};
 
-const EditProgrammedExpenseScreen = ({ route, navigation }) => {
+const EditProgrammedExpenseScreen = ({ navigation, route }) => {
   const { selectedProgrammedExpense } = route.params;
-  const { mutate: editProgrammedExpense, isLoading, isError, error } = useEditProgrammedExpenseForm();
+  const [concept, setConcept] = React.useState(selectedProgrammedExpense.concept);
+  const [amount, setAmount] = React.useState(selectedProgrammedExpense.amount);
+  const initialStartDate = selectedProgrammedExpense.date ? new Date(selectedProgrammedExpense.date) : new Date();
+  const initialEndDate = selectedProgrammedExpense.endDate ? new Date(selectedProgrammedExpense.endDate) : new Date();
+  
+  const [date, setStartDate] = React.useState(initialStartDate);
+  const [endDate, setEndDate] = React.useState(initialEndDate);
+  const [paymentMethod, setPaymentMethod] = React.useState("CASH"); // Default to CASH
+  const [selectedCard, setSelectedCard] = React.useState(selectedProgrammedExpense.cardId);
+  const [cuotas, setCuotas] = React.useState(null);
+  const [periodicity, setPeriodicity] = React.useState(null);
+  
+  const [nameHasError, setNameError] = React.useState(false);
+  const [amountHasError, setAmountError] = React.useState(false);
+  const [periodicityHasError, setPeriodicityError] = React.useState(false);
+  const [cuotasHasError, setCuotasError] = React.useState(false);
 
-  const [editedProgrammedExpenseName, setEditedProgrammedExpenseName] = useState(selectedProgrammedExpense.name);
-  const [editedProgrammedExpenseAmount, setEditedProgrammedExpenseAmount] = useState(String(selectedProgrammedExpense.limitAmount));
-  const [editedStartDate, setNewStartDate] = useState(new Date(selectedProgrammedExpense.creationDate));
-  const [editedEndDate, setNewEndDate] = useState(new Date(selectedProgrammedExpense.limitDate));
+  const [startDateOpen, setStartDateOpen] = React.useState(false);
+  const [endDateOpen, setEndDateOpen] = React.useState(false);
+  
+  const { isPending: loading, mutate: sendForm } = useEditProgrammedExpenseForm();
 
-  const [nameHasError, setNameError] = useState(false);
-  const [amountHasError, setAmountError] = useState(false);
-
-  const [startDateOpen, setStartDateOpen] = useState(false);
-  const [endDateOpen, setEndDateOpen] = useState(false);
-
-  const handleEditProgrammedExpense = () => {
+  const handleSubmit = () => {
     if (checkForErrors()) {
       Alert.alert("Validation error", "Please correct selected fields and try again.");
       return;
     }
 
-    const editedProgrammedExpense = {
+    const newProgrammedExpense = {
       programmedExpenseId: selectedProgrammedExpense.id,
-      request: {
-        name: editedProgrammedExpenseName,
-        limitAmount: parseFloat(editedProgrammedExpenseAmount),
-        startingDate: editedStartDate,
-        limitDate: editedEndDate,
+      request : {
+        concept,
+        amount,
+        date: date.toISOString().substring(0, 10),
+        category: selectedProgrammedExpense.category,
+        iconId: selectedProgrammedExpense.iconId,
+        paymentMethod,
+        cardId: selectedCard,
+        cuotas,
+        endDate: endDate.toISOString().substring(0, 10),
+        periodicity: parseInt(periodicity,10),
       }
     };
-
-    editProgrammedExpense(editedProgrammedExpense);
+    sendForm(newProgrammedExpense);
     navigation.navigate('programmedExpense-list');
+
+  };
+
+  const handleBack = async () => {
+    navigation.goBack();
   };
 
   const checkForErrors = () => {
     let nameErr = checkNameError();
     let amountErr = checkAmountError();
-    return nameErr || amountErr;
+    let cuotasErr = checkCuotasError();
+    let periodicityErr = checkPeriodicityError();
+    return nameErr || amountErr || cuotasErr || periodicityErr;
   };
-
+  
   const checkNameError = () => {
+    if (concept === null) {
+      setNameError(false);
+      return false;
+    }
     let regex = /^[A-Za-z\d\s]+$/;
-    let isValid = regex.test(editedProgrammedExpenseName);
+    let isValid = regex.test(concept);
     setNameError(!isValid);
     return !isValid;
   };
-
+  
   const checkAmountError = () => {
+    if (amount === null) {
+      setAmountError(false);
+      return false;
+    }
     let regex = /^[\d]{1,12}((\.)(\d){1,2})?$/;
-    let isValid = regex.test(editedProgrammedExpenseAmount);
+    let isValid = regex.test(amount);
     setAmountError(!isValid);
     return !isValid;
   };
+  
+  const checkCuotasError = () => {
+    if (paymentMethod === 'CASH' && (cuotas === null || cuotas === '')) {
+      setCuotasError(false);
+      return false;
+    }
+    let cuotasValue = parseInt(cuotas, 10);
+    let isValid = Number.isInteger(cuotasValue) && cuotasValue >= 0 && cuotasValue <= 120;
+    setCuotasError(!isValid);
+    return !isValid;
+  };
+  const checkPeriodicityError = () => {
+    if (periodicity === null || periodicity === '') {
+      setPeriodicityError(false);
+      return false;
+    }
+    let periodicityValue = parseInt(periodicity, 10);
+    let isValid = Number.isInteger(periodicityValue) && periodicityValue >= 0 && periodicityValue <= 365;
+    setPeriodicityError(!isValid);
+    return !isValid;
+  };
+  const handleCuotasChange = (value) => {
+    const numericValue = value === '' ? null : parseInt(value, 10);
+    setCuotas(numericValue);
+    checkCuotasError();
+  };
+  
+  const handlePeriodicityChange = (value) => {
+    // Convert to integer or set to null if empty
+    const numericValue = value === '' ? null : parseInt(value, 10);
+    setPeriodicity(numericValue);
+    checkPeriodicityError();
+  };
+    
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
-  // Handle errors
-  if (isError) {
-    Alert.alert("Error", error.message);
-  }
+  React.useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: paymentMethod === 'CARD' ? 1 : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [paymentMethod]);
+
+  React.useEffect(() => {
+    if (paymentMethod === 'CARD') {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [paymentMethod]);
 
   return (
-    <ScreenTemplate loading={isLoading}>
-      <ScreenTemplate.Scrollable style={{ paddingHorizontal: 15 }}>
+    <ScreenTemplate loading={loading}>
+      <ScreenTemplate.Scrollable style={{paddingHorizontal: 15}}>
         <Text style={{
           fontFamily: 'Roboto-Medium',
           fontSize: 28,
@@ -78,81 +183,124 @@ const EditProgrammedExpenseScreen = ({ route, navigation }) => {
           color: '#333',
           marginBottom: 30,
           marginTop: 30,
-        }}>Edit Programmed Expense</Text>
+        }}>Program an Expense</Text>
 
-        <Text>Name</Text>
-        <AppInput.ProgrammedExpense
-          value={editedProgrammedExpenseName}
-          onChangeText={setEditedProgrammedExpenseName}
-          errorMessage={nameHasError ? "Concept may only contain letters or numbers" : null}
+        <ListItem containerStyle={{marginBottom: 20}}>
+          <Icon name={iconFactory(selectedProgrammedExpense.iconId)} type="entypo" />
+          <ListItem.Content>
+            <ListItem.Title>{selectedProgrammedExpense.category}</ListItem.Title>
+          </ListItem.Content>
+        </ListItem>
+        
+        <AppInput.Concept
+          value={concept}
+          onChangeText={setConcept}
+          errorMessage={nameHasError? "Concept may only contain letters or numbers" : null}
           onEndEditing={checkNameError}
         />
 
-        <Text>Programmed Expense Max</Text>
         <AppInput.Amount
-          value={editedProgrammedExpenseAmount}
-          onChangeText={setEditedProgrammedExpenseAmount}
-          errorMessage={amountHasError ? "Amount must be positive and limited to cent precision" : null}
+          value={amount}
+          onChangeText={setAmount}
+          errorMessage={amountHasError? "Amount must be positive and limited to cent precision" : null}
           onEndEditing={checkAmountError}
         />
 
-        <Text>Starting date</Text>
+        <Text style={{ color: 'black' }}>Starting date</Text>
         <AppInput.Date
-          value={editedStartDate}
+          value={date}
           onPress={() => setStartDateOpen(true)}
         />
         <DatePicker
-            modal
-            mode="date"
-            open={startDateOpen}
-            date={editedStartDate}
-            onConfirm={(selectedDate) => {
-              setStartDateOpen(false);
-              setNewStartDate(selectedDate);
-            }}
-            onCancel={() => {
-                setStartDateOpen(false);
-            }}
-            maximumDate={new Date()}
-          />
+          modal
+          mode="date"
+          open={startDateOpen}
+          date={date}
+          onConfirm={(selectedDate) => {
+            setStartDateOpen(false);
+            setStartDate(selectedDate);
+          }}
+          onCancel={() => {
+            setStartDateOpen(false);
+          }}
+          maximumDate={endDate}
+        />
+        
+        <AppInput.Periodicity 
+          value={periodicity}
+          onChangeText={handlePeriodicityChange}
+          keyboardType="numeric"
+          errorMessage={periodicityHasError ? "Periodicity must be between 0 and 365" : null}
+          onEndEditing={checkPeriodicityError}
+        />
 
-
-        <Text>Ending date</Text>
+        <Text style={{ color: 'black' }}>Ending date</Text>
         <AppInput.Date
-          value={editedEndDate}
+          value={endDate}
           onPress={() => setEndDateOpen(true)}
         />
+        
         <DatePicker
-            modal
-            mode="date"
-            open={endDateOpen}
-            date={editedEndDate}
-            onConfirm={(selectedDate) => {
-              setEndDateOpen(false);
-              setNewEndDate(selectedDate);
-            }}
-            onCancel={() => {
-                setEndDateOpen(false);
-            }}
-            minimumDate={editedStartDate || new Date()} // Ensure minimumDate is before or equal to maximumDate
-            maximumDate={new Date('2100-12-31')} // Allow dates far into the future
-          />
+          modal
+          mode="date"
+          open={endDateOpen}
+          date={endDate}
+          onConfirm={(selectedDate) => {
+            setEndDateOpen(false);
+            setEndDate(selectedDate);
+          }}
+          onCancel={() => {
+            setEndDateOpen(false);
+          }}
+          minimumDate={date}
+        />
 
+        {/* Payment Method selector */}
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            style={[styles.paymentMethodButton, paymentMethod === 'CASH' ? styles.activeCashPaymentMethod : null]}
+            onPress={() => setPaymentMethod('CASH')}
+          >
+            <Text style={styles.paymentMethodButtonText}>CASH</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.paymentMethodButton, paymentMethod === 'CARD' ? styles.activeCardPaymentMethod : null]}
+            onPress={() => setPaymentMethod('CARD')}
+          >
+            <Text style={styles.paymentMethodButtonText}>CARD</Text>
+          </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity style={styles.saveButton} onPress={handleEditProgrammedExpense}>
-          <Text style={styles.saveButtonText}>Save Changes</Text>
+        {/* Card and Cuotas fields */}
+        <Animated.View style={{ opacity: fadeAnim }}>
+          {paymentMethod === 'CARD' && (
+            <View>
+           <CardDropdown selectedCard={selectedCard} setSelectedCard={setSelectedCard} />
+
+          <Text style={styles.cuotasLabel}>Cuotas</Text>
+              <AppInput.Cuotas
+                value={cuotas}
+                onChangeText={handleCuotasChange}
+                keyboardType="numeric"
+                errorMessage={cuotasHasError ? "Cuotas must be between 1 and 120" : null}
+              />
+            </View>
+          )}
+        </Animated.View>
+
+        <TouchableOpacity style={styles.saveButton} onPress={handleSubmit}>
+          <Text style={styles.primaryButtonText}>SUBMIT</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.cancelButtonText}>Cancel</Text>
+        
+        <TouchableOpacity style={styles.cancelButton} onPress={handleBack}>
+          <Text style={styles.secondaryButtonText}>BACK</Text>
         </TouchableOpacity>
-
       </ScreenTemplate.Scrollable>
     </ScreenTemplate>
   );
 };
 
-const styles = {
+const styles = StyleSheet.create({
   saveButton: {
     backgroundColor: '#E86DC3',
     borderRadius: 5,
@@ -160,6 +308,7 @@ const styles = {
     alignItems: 'center',
     marginBottom: 10,
     marginTop: 20,
+    borderWidth: 1,
   },
   saveButtonText: {
     color: 'white',
@@ -177,6 +326,24 @@ const styles = {
     fontSize: 16,
     fontWeight: 'bold',
   },
-};
+  paymentMethodButton: {
+    backgroundColor: '#DDD',
+    borderRadius: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    marginRight: 10,
+    marginBottom: 10,
+  },
+  activeCashPaymentMethod: {
+    backgroundColor: 'lightgreen',
+  },
+  activeCardPaymentMethod: {
+    backgroundColor: 'lightblue',
+  },
+  paymentMethodButtonText: {
+    fontWeight: 'bold',
+    color: '#333',
+  },
+});
 
 export default EditProgrammedExpenseScreen;

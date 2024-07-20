@@ -1,10 +1,11 @@
 import React from 'react';
-import { Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { Text, StyleSheet, TouchableOpacity, Alert, View, Animated } from 'react-native';
 import { ListItem, Icon } from '@rneui/themed';
 import DatePicker from 'react-native-date-picker';
 import ScreenTemplate from '../components/ScreenTemplate';
 import { AppInput } from '../components/AppInput';
 import { useProgrammedExpenseCreationForm } from '../hooks/programmedExpense';
+import CardDropdown from '../components/CardDropdown';
 
 const iconFactory = (id) => {
   switch (id) {
@@ -31,10 +32,15 @@ const iconFactory = (id) => {
 
 
 const AddProgrammedExpenseScreen = ({navigation, route}) => {
-  const [name, setName] = React.useState("");
+  const [concept, setConcept] = React.useState("");
   const [amount, setAmount] = React.useState("");
-  const [startDate, setStartDate] = React.useState(new Date());
+  const [date, setStartDate] = React.useState(new Date());
   const [endDate, setEndDate] = React.useState(new Date());
+  const [paymentMethod, setPaymentMethod] = React.useState("CASH"); // Default to CASH
+  const [selectedCard, setSelectedCard] = React.useState("");
+  const [cuotas, setCuotas] = React.useState("");
+  const [periodicity, setPeriodicity] = React.useState(1);
+
   
   const [nameHasError, setNameError] = React.useState(false);
   const [amountHasError, setAmountError] = React.useState(false);
@@ -51,11 +57,16 @@ const AddProgrammedExpenseScreen = ({navigation, route}) => {
       return;
     }
     let newProgrammedExpense = {
-      name, 
-      limitAmount: amount, 
-      ...(route.params.selectedCategory), 
-      startingDate: startDate, 
-      limitDate: endDate
+      concept,
+      amount,
+      date: date.toISOString().substring(0, 10),
+      category: route.params.selectedCategory.category,
+      iconId: route.params.selectedCategory.iconId,
+      paymentMethod,
+      cardId: selectedCard,
+      cuotas,
+      endDate: endDate.toISOString().substring(0, 10),
+      periodicity
     };
 
     sendForm(newProgrammedExpense);
@@ -73,7 +84,7 @@ const AddProgrammedExpenseScreen = ({navigation, route}) => {
 
   const checkNameError = () => {
     let regex = /^[A-Za-z\d\s]+$/;
-    let isValid = regex.test(name);
+    let isValid = regex.test(concept);
     setNameError(!isValid);
     return !isValid;
   };
@@ -84,6 +95,31 @@ const AddProgrammedExpenseScreen = ({navigation, route}) => {
     setAmountError(!isValid);
     return !isValid;
   };
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+  Animated.timing(fadeAnim, {
+    toValue: paymentMethod === 'CARD' ? 1 : 0,
+    duration: 300,
+    useNativeDriver: true,
+  }).start();
+}, [paymentMethod]);
+
+  React.useEffect(() => {
+    if (paymentMethod === 'CARD') {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [paymentMethod]);
 
   return (
     <ScreenTemplate loading={loading}>
@@ -97,7 +133,6 @@ const AddProgrammedExpenseScreen = ({navigation, route}) => {
           marginTop: 30,
         }}>Program an Expense</Text>
 
-        <Text>Category</Text>
         <ListItem containerStyle={{marginBottom: 20}}>
           <Icon name={iconFactory(route.params.selectedCategory.iconId)} type="entypo" />
           <ListItem.Content>
@@ -105,15 +140,13 @@ const AddProgrammedExpenseScreen = ({navigation, route}) => {
           </ListItem.Content>
         </ListItem>
         
-        <Text>Name</Text>
-        <AppInput.ProgrammedExpense
-          value={name}
-          onChangeText={setName}
+        <AppInput.Concept
+          value={concept}
+          onChangeText={setConcept}
           errorMessage={nameHasError? "Concept may only contain letters or numbers" : null}
           onEndEditing={checkNameError}
         />
 
-        <Text>ProgrammedExpense Max</Text>
         <AppInput.Amount
           value={amount}
           onChangeText={setAmount}
@@ -121,17 +154,16 @@ const AddProgrammedExpenseScreen = ({navigation, route}) => {
           onEndEditing={checkAmountError}
         />
 
-        <Text>Starting date</Text>
+        <Text style={{ color: 'black' }}>Starting date</Text>
         <AppInput.Date
-          value={startDate}
+          value={date}
           onPress={() => setStartDateOpen(true)}
         />
-
         <DatePicker
           modal
           mode="date"
           open={startDateOpen}
-          date={startDate}
+          date={date}
           onConfirm={(selectedDate) => {
             setStartDateOpen(false);
             setStartDate(selectedDate);
@@ -140,10 +172,13 @@ const AddProgrammedExpenseScreen = ({navigation, route}) => {
             setStartDateOpen(false);
           }}
           maximumDate={endDate}
-          minimumDate={new Date()}
         />
-
-        <Text>Ending date</Text>
+        <AppInput.Periodicity
+                        value={periodicity}
+                        onChangeText={setPeriodicity}
+                        keyboardType="numeric"
+                        errorMessage={cuotas && (parseInt(periodicity) < 1 || parseInt(periodicity) > 365) ? "Periodicity must be between 0 and 365" : null} />
+        <Text style={{ color: 'black' }}>Ending date</Text>
         <AppInput.Date
           value={endDate}
           onPress={() => setEndDateOpen(true)}
@@ -161,8 +196,40 @@ const AddProgrammedExpenseScreen = ({navigation, route}) => {
           onCancel={() => {
             setEndDateOpen(false);
           }}
-          minimumDate={startDate}
+          minimumDate={date}
         />
+        {/* Payment Method selector */}
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            style={[styles.paymentMethodButton, paymentMethod === 'CASH' ? styles.activeCashPaymentMethod : null]}
+            onPress={() => setPaymentMethod('CASH')}
+          >
+            <Text style={styles.paymentMethodButtonText}>CASH</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.paymentMethodButton, paymentMethod === 'CARD' ? styles.activeCardPaymentMethod : null]}
+            onPress={() => setPaymentMethod('CARD')}
+          >
+            <Text style={styles.paymentMethodButtonText}>CARD</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Card and Cuotas fields */}
+        <Animated.View style={{ opacity: fadeAnim }}>
+          {paymentMethod === 'CARD' && (
+            <View>
+           <CardDropdown selectedCard={selectedCard} setSelectedCard={setSelectedCard} />
+
+          <Text style={styles.cuotasLabel}>Cuotas</Text>
+              <AppInput.Cuotas
+                value={cuotas}
+                onChangeText={setCuotas}
+                keyboardType="numeric"
+                errorMessage={cuotas && (parseInt(cuotas) < 1 || parseInt(cuotas) > 120) ? "Cuotas must be between 1 and 120" : null}
+              />
+            </View>
+          )}
+        </Animated.View>
 
         <TouchableOpacity style={styles.saveButton} onPress={handleSubmit}>
           <Text style={styles.saveButtonText}>Create</Text>
@@ -203,6 +270,24 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  paymentMethodButton: {
+    backgroundColor: '#DDD',
+    borderRadius: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    marginRight: 10,
+    marginBottom: 10,
+  },
+  activeCashPaymentMethod: {
+    backgroundColor: 'lightgreen',
+  },
+  activeCardPaymentMethod: {
+    backgroundColor: 'lightblue',
+  },
+  paymentMethodButtonText: {
+    fontWeight: 'bold',
+    color: '#333',
   },
 });
 

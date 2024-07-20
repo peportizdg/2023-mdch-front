@@ -33,7 +33,9 @@ const ProgrammedExpenseList = ({ onAdd, onSelection }) => {
         <ListItem key={index} bottomDivider onPress={() => onSelection(programmed)}>
           <Icon name={iconFactory(programmed.iconId)} type="entypo" />
           <ListItem.Content>
-            <ListItem.Title>{programmed.name}</ListItem.Title>
+          <ListItem.Title style={{ color: '#E86DC3', fontWeight: 'bold' }}>
+            {programmed.concept}
+          </ListItem.Title>
             <ListItem.Subtitle>{programmed.category}</ListItem.Subtitle>
           </ListItem.Content>
           <ListItem.Chevron />

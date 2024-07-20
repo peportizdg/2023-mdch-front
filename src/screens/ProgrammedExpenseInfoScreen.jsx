@@ -1,29 +1,42 @@
 import React from "react";
-import { Text, TouchableOpacity, Alert } from "react-native";
+import { Icon } from "@rneui/themed";
+import { Text, TouchableOpacity, Alert , StyleSheet, View} from "react-native";
 import ScreenTemplate from "../components/ScreenTemplate";
-import { ListItem, Icon } from "@rneui/themed";
-import { ProgressChart } from "react-native-chart-kit";
 import { ScrollView } from "react-native";
 import { useDeleteProgrammedExpense } from "../hooks/programmedExpense";
 
+const iconFactory = (id) => {
+  switch (id) {
+    case 1:
+      return "aircraft";
+    case 2:
+      return "drink";
+    case 3:
+      return "key";
+    case 4:
+      return "shopping-cart";
+    case 5:
+      return "clapperboard";
+    case 6:
+      return "squared-plus";
+    case 7:
+      return "man";
+    case 8:
+      return "open-book";
+    default:
+      return "credit";
+  }
+};
 
 const ProgrammedExpenseInfoScreen = ({ navigation, route }) => {
   const { selectedProgrammedExpense } = route.params;
   const { mutate: deleteProgrammedExpense } = useDeleteProgrammedExpense();
 
   const handleEditProgrammedExpense = () => {
-    navigation.navigate("edit-programmedExpense-screen", {
-      selectedProgrammedExpense
-    });
+    navigation.navigate("edit-programmedExpense-screen", {selectedProgrammedExpense});
   };
 
-  const handleDelete = () => {const handleEditProgrammedExpense = (item) => {
-    navigation.navigate("Edit ProgrammedExpense Modal", {
-      screen: "edit-programmedExpense-modal",
-      params: {
-      },
-    });
-  };
+  const handleDelete = () => {
     Alert.alert(
       "Confirm Deletion",
       "Are you sure you want to delete this programmedExpense?",
@@ -55,107 +68,45 @@ const ProgrammedExpenseInfoScreen = ({ navigation, route }) => {
     <ScreenTemplate>
       <ScreenTemplate.Content style={{ paddingHorizontal: 15 }}>
         <ScrollView>
-          <Text
-            style={{
-              fontFamily: "Roboto-Medium",
-              fontSize: 28,
-              fontWeight: "500",
-              color: "#333",
-              marginBottom: 30,
-              marginTop: 30,
-            }}
-          >
-            {selectedProgrammedExpense.name}
-          </Text>
+        <Text style={styles.title}>Programmed Expense: </Text>
+          <Text style={styles.titleValue}>{selectedProgrammedExpense.concept}</Text>
 
-          <Text
-              style={{
-                color: "black",
-                fontSize: 16,
-                fontWeight: "bold",
-              }}
-            >Category</Text>
-          <ListItem>
+          <View style={styles.infoContainer}>
+            <Icon name="money" type="font-awesome" style={styles.icon} />
+            <Text style={styles.label}>   Amount:</Text>
+            <Text style={styles.value}>{selectedProgrammedExpense.amount}</Text>
+          </View>
+
+          <View style={styles.infoContainer}>
+            <Icon name="calendar" type="font-awesome" style={styles.icon} />
+            <Text style={styles.label}>   Date:</Text>
+            <Text style={styles.value}>{selectedProgrammedExpense.date}</Text>
+          </View>
+
+          <View style={styles.infoContainer}>
+            <Icon name="folder" type="font-awesome" style={styles.icon} />
+            <Text style={styles.label}>   Category:</Text>
             <Icon name={iconFactory(selectedProgrammedExpense.iconId)} type="entypo" />
-            <ListItem.Content>
-              <ListItem.Title>{selectedProgrammedExpense.category}</ListItem.Title>
-            </ListItem.Content>
-          </ListItem>
+            <Text style={styles.value}>{selectedProgrammedExpense.category}</Text>
+          </View>
 
-          <Text
-              style={{
-                color: "black",
-                fontSize: 16,
-                fontWeight: "bold",
-              }}
-            >Starting Date</Text>
-          <ListItem>
-            <Icon name="arrow-expand-right" type="material-community" />
-            <ListItem.Content>
-              <ListItem.Title>{selectedProgrammedExpense.creationDate}</ListItem.Title>
-            </ListItem.Content>
-          </ListItem>
+          <View style={styles.infoContainer}>
+            <Icon name="credit-card" type="font-awesome" style={styles.icon} />
+            <Text style={styles.label}>   Payment Method:</Text>
+            <Text style={styles.value}>{selectedProgrammedExpense.paymentMethod}</Text>
+          </View>
 
-          <Text
-              style={{
-                color: "black",
-                fontSize: 16,
-                fontWeight: "bold",
-              }}
-            >Ending date</Text>
-          <ListItem>
-            <Icon name="arrow-expand-left" type="material-community" />
-            <ListItem.Content>
-              <ListItem.Title>{selectedProgrammedExpense.limitDate}</ListItem.Title>
-            </ListItem.Content>
-          </ListItem>
+          <View style={styles.infoContainer}>
+            <Icon name="repeat" type="font-awesome" style={styles.icon} />
+            <Text style={styles.label}>   Periodicity:</Text>
+            <Text style={styles.value}>{selectedProgrammedExpense.periodicity} days</Text>
+          </View>
 
-          <Text
-              style={{
-                color: "black",
-                fontSize: 16,
-                fontWeight: "bold",
-              }}
-            >Programmed Expense Amount</Text>
-          <ListItem>
-            <Icon name="credit" type="entypo" />
-            <ListItem.Content>
-              <ListItem.Title>{selectedProgrammedExpense.limitAmount}</ListItem.Title>
-            </ListItem.Content>
-          </ListItem>
-
-          <Text
-              style={{
-                color: "black",
-                fontSize: 16,
-                fontWeight: "bold",
-              }}
-            >Amount spent so far</Text>
-          <ListItem>
-            <Icon name="credit" type="entypo" />
-            <ListItem.Content>
-              <ListItem.Title>{selectedProgrammedExpense.currentAmount}</ListItem.Title>
-            </ListItem.Content>
-          </ListItem>
-
-          <ProgressChart
-            data={{
-              labels: ["Spent"], // optional
-              data: [
-                parseFloat(selectedProgrammedExpense.currentAmount) /
-                  parseFloat(selectedProgrammedExpense.limitAmount),
-              ],
-            }}
-            width={330}
-            height={150}
-            radius={50}
-            chartConfig={{
-              color: (opacity = 1) => `rgba(232, 109, 195, ${opacity})`,
-              backgroundGradientFrom: "#ffffff",
-              backgroundGradientTo: "#ffffff",
-            }}
-            hideLegend={true}
-          />
+          <View style={styles.infoContainer}>
+            <Icon name="calendar" type="font-awesome" style={styles.icon} />
+            <Text style={styles.label}>   End Date:</Text>
+            <Text style={styles.value}>{selectedProgrammedExpense.endDate}</Text>
+</View>
 
           <TouchableOpacity
             style={{
@@ -184,7 +135,7 @@ const ProgrammedExpenseInfoScreen = ({ navigation, route }) => {
               borderRadius: 5,
               padding: 10,
               alignItems: "center",
-              marginTop: 10,
+              marginTop: 5,
             }}
             onPress={handleEditProgrammedExpense}
           
@@ -226,4 +177,45 @@ const ProgrammedExpenseInfoScreen = ({ navigation, route }) => {
   );
 };
 
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#f8f8f8',
+  },
+  title: {
+    fontFamily: 'Roboto-Medium',
+    fontSize: 28,
+    fontWeight: '500',
+    color: 'black',
+    marginTop: 40,
+    textAlign: 'center',
+  },
+  titleValue: {
+    fontFamily: 'Roboto-Bold', // Set to bold font
+    fontSize: 28,
+    color: '#E86DC3',
+    textAlign: 'center',
+    textDecorationLine: 'underline', // Add underline
+  },
+  infoContainer: {
+    marginTop: 20,
+    flexDirection: 'row',
+    marginBottom: 30,
+  },
+  label: {
+    fontFamily: 'Roboto-Medium',
+    fontSize: 18,
+    fontWeight: '500',
+    color: 'gray',
+    flex: 1,
+  },
+  value: {
+    fontFamily: 'Roboto-Regular',
+    fontSize: 18,
+    color: 'black',
+    flex: 2,
+  },
+});
 export default ProgrammedExpenseInfoScreen;

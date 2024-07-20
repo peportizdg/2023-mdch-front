@@ -13,7 +13,7 @@ const ProgrammedExpensesScreen = ({ navigation, route }) => {
   };
 
   const handleAddProgrammedExpense = () => {
-    navigation.navigate("programmedExpense-add");
+    navigation.navigate("programmedExpense-add/categories-list");
   };
 
   return (

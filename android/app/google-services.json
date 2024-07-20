@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "710899479741",
+    "project_id": "extraapp-802be",
+    "storage_bucket": "extraapp-802be.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:710899479741:android:5ad48f9cc6f400bf0f33d4",
+        "android_client_info": {
+          "package_name": "com.extraapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAGLzMbMMOxnwyM_SHMCBC6kxYaJ0hUHRA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:710899479741:android:b4c5ee5831691a830f33d4",
+        "android_client_info": {
+          "package_name": "org.mojodojocasahouse.extra"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAGLzMbMMOxnwyM_SHMCBC6kxYaJ0hUHRA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

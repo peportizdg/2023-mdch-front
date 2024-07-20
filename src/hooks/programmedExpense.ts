@@ -18,6 +18,7 @@ function getProgrammedExpenseList({ queryKey }: QueryFunctionContext<[string]>):
 }
 
 function submitProgrammedExpense(request: ProgrammedExpenseCreationRequest): Promise<ApiResponse> {
+  console.log(request);
   return postToApi("/addProgrammedExpense", {
     credentials: "include",
     headers: {
@@ -113,7 +114,7 @@ export function useProgrammedExpenseCreationForm() {
     if(mutation.isSuccess){
       Alert.alert(
         "Creation Success",
-        "ProgrammedExpense created successfully",
+        "Programmed Expense created successfully",
         [{
           text: "OK", 
           onPress: async () => {
@@ -192,31 +193,3 @@ export function useEditProgrammedExpenseForm() {
   return mutation;
 }
 
-export function useActiveProgrammedExpenseByDateAndCategory(date: string, category: string) {
-  const { sessionExpired } = useAuthentication();
-  const query = useQuery({ 
-    queryKey: ['getActiveProgrammedExpenses', date, category], 
-    queryFn: getActiveProgrammedExpenseByDateAndCategory,
-    retry: false
-  });
-
-  useEffect(() => {
-    console.log(query.error);
-
-    if(query.error instanceof SessionExpiredError){
-      Alert.alert(
-        "Session Expired", 
-        query.error.message, 
-        [{text: "Return to Login", onPress: sessionExpired}]
-      );
-  
-    } else if(query.isError) {
-      Alert.alert(
-        "Error",
-        query.error.message
-      );
-    }
-  }, [query.error]);
-
-  return query;
-}

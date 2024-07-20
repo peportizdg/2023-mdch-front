@@ -209,7 +209,7 @@ declare interface ProgrammedExpenseEditionRequest {
   category: string,
   iconId: string,
   paymentMethod: string,
-  periodicity: number,
+  periodicity: string,
   endDate: string
 };
 
