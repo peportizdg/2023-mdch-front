@@ -113,7 +113,6 @@ const EditBudgetScreen = ({ route, navigation }) => {
             onCancel={() => {
                 setStartDateOpen(false);
             }}
-            maximumDate={new Date()}
           />
 
 

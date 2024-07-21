@@ -179,3 +179,37 @@ declare interface CardEditingRequest {
   cardName: string,
   cardLimit: number
 };
+// PROGRAMMED EXPENSES
+declare interface ProgrammedExpense {
+  id: string,
+  concept: string,
+  amount: string,
+  date: string,
+  category: string,
+  iconId: string,
+  paymentMethod: string,
+  periodicity: number,
+  endDate: string
+};
+
+declare interface ProgrammedExpenseCreationRequest {
+  concept: string,
+  amount: string,
+  date: string,
+  category: string,
+  iconId: string,
+  paymentMethod: string,
+  periodicity: number,
+  endDate: string
+};
+declare interface ProgrammedExpenseEditionRequest {
+  concept: string,
+  amount: string,
+  date: string,
+  category: string,
+  iconId: string,
+  paymentMethod: string,
+  periodicity: string,
+  endDate: string
+};
+

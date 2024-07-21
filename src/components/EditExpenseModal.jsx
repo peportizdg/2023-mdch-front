@@ -70,6 +70,32 @@ const EditExpenseModal = ({ isVisible, onClose, onSave, selectedExpense }) => {
     setDate(new Date());
   };
 
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+  Animated.timing(fadeAnim, {
+    toValue: paymentMethod === 'CARD' ? 1 : 0,
+    duration: 300,
+    useNativeDriver: true,
+  }).start();
+}, [paymentMethod]);
+
+  React.useEffect(() => {
+    if (paymentMethod === 'CARD') {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [paymentMethod]);
+
 
   return (
     <Modal visible={isVisible} onRequestClose={onClose} transparent>

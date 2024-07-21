@@ -43,7 +43,12 @@ const ExpenseListItem = ({data, onEdit, onDelete}) => {
       <ListItem.Subtitle style={{ fontSize: 13 }} numberOfLines={1}>{data.category}</ListItem.Subtitle>
     </ListItem.Content>
     <ListItem.Content right>
-      <ListItem.Title right numberOfLines={1}>{data.amount}</ListItem.Title>
+      <Icon name={data.paymentMethod === 'CASH' ? 'credit' : 'credit-card'} type="entypo" />
+    </ListItem.Content>
+    <ListItem.Content center>
+      <ListItem.Title right numberOfLines={1}>
+      {data.amount} {data.paymentMethod === 'CARD' && `(${data.cuotas})`}
+      </ListItem.Title>
       <ListItem.Subtitle style={{ fontSize: 12 }} right numberOfLines={1}>{data.date}</ListItem.Subtitle>
     </ListItem.Content>
   </ListItem.Swipeable>;

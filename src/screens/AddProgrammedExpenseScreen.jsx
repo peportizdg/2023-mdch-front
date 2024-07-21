@@ -2,12 +2,10 @@ import React from 'react';
 import { Text, StyleSheet, TouchableOpacity, Alert, View, Animated } from 'react-native';
 import { ListItem, Icon } from '@rneui/themed';
 import DatePicker from 'react-native-date-picker';
-import CardDropdown from '../components/CardDropdown';
 import ScreenTemplate from '../components/ScreenTemplate';
 import { AppInput } from '../components/AppInput';
-import BudgetFilledMeter from '../components/BudgetFilledMeter';
-import { useExpenseEditionForm } from '../hooks/expenses';
-import { useActiveBudgetByDateAndCategory } from '../hooks/budgets';
+import { useProgrammedExpenseCreationForm } from '../hooks/programmedExpense';
+import CardDropdown from '../components/CardDropdown';
 
 const iconFactory = (id) => {
   switch (id) {
@@ -33,45 +31,45 @@ const iconFactory = (id) => {
 };
 
 
-const ModifyExpenseScreen = ({navigation, route}) => {
-  const [concept, setConcept] = React.useState(route.params?.selectedItem?.concept || "");
-  const [amount, setAmount] = React.useState(route.params?.selectedItem?.amount?.toString() || "");
-  const [date, setDate] = React.useState(new Date(route.params?.selectedItem?.date) || new Date());
-  const [paymentMethod, setPaymentMethod] = React.useState(route.params?.selectedItem?.paymentMethod || "CASH"); 
-  const [selectedCard, setSelectedCard] = React.useState(route.params?.selectedItem?.cardId || "");
-  const [cuotas, setCuotas] = React.useState(route.params?.selectedItem?.cuotas || "");
+const AddProgrammedExpenseScreen = ({navigation, route}) => {
+  const [concept, setConcept] = React.useState("");
+  const [amount, setAmount] = React.useState("");
+  const [date, setStartDate] = React.useState(new Date());
+  const [endDate, setEndDate] = React.useState(new Date());
+  const [paymentMethod, setPaymentMethod] = React.useState("CASH"); // Default to CASH
+  const [selectedCard, setSelectedCard] = React.useState("");
+  const [cuotas, setCuotas] = React.useState("");
+  const [periodicity, setPeriodicity] = React.useState(1);
 
-  const [dateModalOpen, setDateModalOpen] = React.useState(false);
-  const [conceptHasError, setConceptError] = React.useState(false);
-  const [amountHasError, setAmountError] = React.useState(false);
   
-  const { isPending: isPendingActiveBudgets, data: activeBudget } = useActiveBudgetByDateAndCategory(date, route.params.selectedCategory.category);
-  const { isPending: isPendingForm, mutate: sendForm } = useExpenseEditionForm();
-  const loading = isPendingActiveBudgets || isPendingForm;
+  const [nameHasError, setNameError] = React.useState(false);
+  const [amountHasError, setAmountError] = React.useState(false);
+
+  const [startDateOpen, setStartDateOpen] = React.useState(false);
+  const [endDateOpen, setEndDateOpen] = React.useState(false);
+  
+  const { isPending: loading, mutate: sendForm } = useProgrammedExpenseCreationForm();
+
 
   const handleSubmit = async () => {
     if(checkForErrors()){
       Alert.alert("Validation error", "Please correct selected fields and try again.");
       return;
     }
-    let editedExpense = {
-      expenseId: route.params.selectedItem.id,
-      request: {
-        concept,
-        amount,
-        date: date.toISOString().substring(0, 10),
-        category: route.params.selectedCategory.category,
-        iconId: route.params.selectedCategory.iconId,
-        paymentMethod,
-        cardId: selectedCard,
-        cuotas,
-      }
+    let newProgrammedExpense = {
+      concept,
+      amount,
+      date: date.toISOString().substring(0, 10),
+      category: route.params.selectedCategory.category,
+      iconId: route.params.selectedCategory.iconId,
+      paymentMethod,
+      cardId: selectedCard,
+      cuotas,
+      endDate: endDate.toISOString().substring(0, 10),
+      periodicity
     };
 
-  
-    console.log('Edited Expense:', editedExpense);
-  
-    sendForm(editedExpense);
+    sendForm(newProgrammedExpense);
   };
 
   const handleBack = async () => {
@@ -79,15 +77,15 @@ const ModifyExpenseScreen = ({navigation, route}) => {
   };
 
   const checkForErrors = () => {
-    let nameErr = checkConceptError();
+    let nameErr = checkNameError();
     let amountErr = checkAmountError();
     return nameErr || amountErr;
   };
 
-  const checkConceptError = () => {
+  const checkNameError = () => {
     let regex = /^[A-Za-z\d\s]+$/;
     let isValid = regex.test(concept);
-    setConceptError(!isValid);
+    setNameError(!isValid);
     return !isValid;
   };
 
@@ -97,16 +95,15 @@ const ModifyExpenseScreen = ({navigation, route}) => {
     setAmountError(!isValid);
     return !isValid;
   };
-
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
-    React.useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: paymentMethod === 'CARD' ? 1 : 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, [paymentMethod]);
+  React.useEffect(() => {
+  Animated.timing(fadeAnim, {
+    toValue: paymentMethod === 'CARD' ? 1 : 0,
+    duration: 300,
+    useNativeDriver: true,
+  }).start();
+}, [paymentMethod]);
 
   React.useEffect(() => {
     if (paymentMethod === 'CARD') {
@@ -126,7 +123,7 @@ const ModifyExpenseScreen = ({navigation, route}) => {
 
   return (
     <ScreenTemplate loading={loading}>
-      <ScreenTemplate.Content style={{paddingHorizontal: 15}}>
+      <ScreenTemplate.Scrollable style={{paddingHorizontal: 15}}>
         <Text style={{
           fontFamily: 'Roboto-Medium',
           fontSize: 28,
@@ -134,9 +131,8 @@ const ModifyExpenseScreen = ({navigation, route}) => {
           color: '#333',
           marginBottom: 30,
           marginTop: 30,
-        }}>Modify Expense</Text>
+        }}>Program an Expense</Text>
 
-        <Text>Category</Text>
         <ListItem containerStyle={{marginBottom: 20}}>
           <Icon name={iconFactory(route.params.selectedCategory.iconId)} type="entypo" />
           <ListItem.Content>
@@ -144,15 +140,13 @@ const ModifyExpenseScreen = ({navigation, route}) => {
           </ListItem.Content>
         </ListItem>
         
-        <Text>Name</Text>
         <AppInput.Concept
           value={concept}
           onChangeText={setConcept}
-          errorMessage={conceptHasError? "Concept may only contain letters or numbers" : null}
-          onEndEditing={checkConceptError}
+          errorMessage={nameHasError? "Concept may only contain letters or numbers" : null}
+          onEndEditing={checkNameError}
         />
 
-        <Text>Amount</Text>
         <AppInput.Amount
           value={amount}
           onChangeText={setAmount}
@@ -160,27 +154,51 @@ const ModifyExpenseScreen = ({navigation, route}) => {
           onEndEditing={checkAmountError}
         />
 
-        <Text>Date</Text>
+        <Text style={{ color: 'black' }}>Starting date</Text>
         <AppInput.Date
           value={date}
-          onPress={() => setDateModalOpen(true)}
+          onPress={() => setStartDateOpen(true)}
         />
-
         <DatePicker
           modal
           mode="date"
-          open={dateModalOpen}
+          open={startDateOpen}
           date={date}
           onConfirm={(selectedDate) => {
-            setDateModalOpen(false);
-            setDate(selectedDate);
+            setStartDateOpen(false);
+            setStartDate(selectedDate);
           }}
           onCancel={() => {
-            setDateModalOpen(false);
+            setStartDateOpen(false);
           }}
-          maximumDate={new Date()}
+          maximumDate={endDate}
         />
-        <Text>Payment Method</Text>
+        <AppInput.Periodicity
+                        value={periodicity}
+                        onChangeText={setPeriodicity}
+                        keyboardType="numeric"
+                        errorMessage={cuotas && (parseInt(periodicity) < 1 || parseInt(periodicity) > 365) ? "Periodicity must be between 0 and 365" : null} />
+        <Text style={{ color: 'black' }}>Ending date</Text>
+        <AppInput.Date
+          value={endDate}
+          onPress={() => setEndDateOpen(true)}
+        />
+        
+        <DatePicker
+          modal
+          mode="date"
+          open={endDateOpen}
+          date={endDate}
+          onConfirm={(selectedDate) => {
+            setEndDateOpen(false);
+            setEndDate(selectedDate);
+          }}
+          onCancel={() => {
+            setEndDateOpen(false);
+          }}
+          minimumDate={date}
+        />
+        {/* Payment Method selector */}
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity
             style={[styles.paymentMethodButton, paymentMethod === 'CASH' ? styles.activeCashPaymentMethod : null]}
@@ -196,6 +214,7 @@ const ModifyExpenseScreen = ({navigation, route}) => {
           </TouchableOpacity>
         </View>
 
+        {/* Card and Cuotas fields */}
         <Animated.View style={{ opacity: fadeAnim }}>
           {paymentMethod === 'CARD' && (
             <View>
@@ -212,38 +231,21 @@ const ModifyExpenseScreen = ({navigation, route}) => {
           )}
         </Animated.View>
 
-        {activeBudget? (
-          <BudgetFilledMeter 
-            name={activeBudget.name}
-            startFilled={activeBudget.currentAmount}
-            limit={activeBudget.limitAmount}
-            add={amount}
-          />
-        ) : null}
-
         <TouchableOpacity style={styles.saveButton} onPress={handleSubmit}>
-          <Text style={styles.saveButtonText}>Modify</Text>
+          <Text style={styles.saveButtonText}>Create</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.cancelButton} onPress={handleBack}>
           <Text style={styles.cancelButtonText}>Back</Text>
         </TouchableOpacity>
         
-      </ScreenTemplate.Content>
+      </ScreenTemplate.Scrollable>
 
     </ScreenTemplate>
   );
 };
 
 const styles = StyleSheet.create({
-  header: {
-    fontFamily: 'Roboto-Medium',
-    fontSize: 28,
-    fontWeight: '500',
-    color: '#333',
-    marginBottom: 30,
-    marginTop: 18,
-  },
   saveButton: {
     backgroundColor: '#E86DC3',
     borderRadius: 5,
@@ -287,11 +289,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
   },
-  cuotasLabel: {
-    fontSize: 14,
-    color: 'black',
-    marginBottom: 5,
-  },
 });
 
-export default ModifyExpenseScreen;
+export default AddProgrammedExpenseScreen;
